@@ -1,80 +1,80 @@
 # Small Language Model - Entrega 1
 
-## 0. Decisoes oficiais do projeto
+## 0. Decisões oficiais do projeto
 
 | Elemento | Escolha |
 | --- | --- |
 | Arquitetura | LLaMA-inspired decoder-only Transformer |
-| Tamanho | Aproximadamente 100M parametros |
+| Tamanho | Aproximadamente 100M parâmetros |
 | Corpus | FineWeb-Edu sample-10BT |
-| Idioma | Ingles |
+| Idioma | Inglês |
 | Tokenizer | GPT-2 BPE |
 | Objetivo | Next-token prediction |
 | Framework | PyTorch |
-| Referencia estrutural | nanoGPT, com codigo proprio/adaptado e creditado |
+| Referência estrutural | nanoGPT, com código próprio/adaptado e creditado |
 
 ## 1. Objetivo
 
-Este projeto implementa o pre-treino de um Small Language Model autorregressivo para previsao do proximo token. A Entrega 1 inclui preparacao do corpus, implementacao do modelo, treino, checkpoints, curva de loss e exemplos de geracao.
+Este projeto implementa o pré-treino de um Small Language Model autorregressivo para previsão do próximo token. A Entrega 1 inclui preparação do corpus, implementação do modelo, treino, checkpoints, curva de loss e exemplos de geração.
 
 ## 2. Arquitetura
 
-O modelo e um Transformer decoder-only inspirado na familia LLaMA:
+O modelo é um Transformer decoder-only inspirado na família LLaMA:
 
-- atencao causal multi-head;
-- RoPE como codificacao posicional;
-- RMSNorm antes da atencao e do bloco feed-forward;
-- SwiGLU como ativacao do feed-forward;
+- atenção causal multi-head;
+- RoPE como codificação posicional;
+- RMSNorm antes da atenção e do bloco feed-forward;
+- SwiGLU como ativação do feed-forward;
 - pesos compartilhados entre embedding de tokens e camada final;
 - objetivo de next-token prediction.
 
-A configuracao oficial esta em [configs/pretrain_llama_100m.yaml](configs/pretrain_llama_100m.yaml). A configuracao local usada na RTX 3060 esta em [configs/pretrain_llama_100m_rtx3060_60k.yaml](configs/pretrain_llama_100m_rtx3060_60k.yaml).
+A configuração oficial está em [configs/pretrain_llama_100m.yaml](configs/pretrain_llama_100m.yaml). A configuração local usada na RTX 3060 está em [configs/pretrain_llama_100m_rtx3060_60k.yaml](configs/pretrain_llama_100m_rtx3060_60k.yaml).
 
-Parametros do modelo local:
+Parâmetros do modelo local:
 
 | Item | Valor |
 | --- | ---: |
-| parametros | 109.392.384 |
-| layers | 10 |
-| hidden size | 768 |
-| heads | 12 |
-| block size local | 512 |
-| vocab size | 50.257 |
+| Parâmetros | 109.392.384 |
+| Layers | 10 |
+| Hidden size | 768 |
+| Heads | 12 |
+| Block size local | 512 |
+| Vocab size | 50.257 |
 
 ## 3. Corpus e tokenizer
 
 Corpus escolhido:
 
-- dataset: `HuggingFaceFW/fineweb-edu`
-- config: `sample-10BT`
-- split: `train`
-- idioma predominante: ingles
-- documentos processados localmente: 500.000
+- dataset: `HuggingFaceFW/fineweb-edu`;
+- config: `sample-10BT`;
+- split: `train`;
+- idioma predominante: inglês;
+- documentos processados localmente: 500.000.
 
-O script [scripts/prepare_data.py](scripts/prepare_data.py) tokeniza o texto com GPT-2 BPE via `tiktoken` e salva os tokens em arquivos binarios:
+O script [scripts/prepare_data.py](scripts/prepare_data.py) tokeniza o texto com GPT-2 BPE via `tiktoken` e salva os tokens em arquivos binários:
 
 - `data/fineweb_edu_train_500m.bin`: 512.824.558 tokens;
 - `data/fineweb_edu_val_500m.bin`: 5.133.236 tokens.
 
-Cada documento recebe o token `<|endoftext|>` ao final, usando o id nativo do GPT-2.
+Cada documento recebe o token `<|endoftext|>` ao final, usando o ID nativo do GPT-2.
 
 ## 4. Treino
 
-Configuracao final local:
+Configuração final local:
 
 | Item | Valor |
 | --- | ---: |
 | GPU | RTX 3060 12 GB |
-| batch size | 1 |
-| gradient accumulation | 16 |
-| tokens por step | 8.192 |
-| max steps | 60.000 |
-| tokens vistos | 491.520.000 |
-| learning rate | `1e-5` |
-| scheduler | constant |
-| optimizer | AdamW |
-| weight decay | 0.1 |
-| dtype | float16 |
+| Batch size | 1 |
+| Gradient accumulation | 16 |
+| Tokens por step | 8.192 |
+| Max steps | 60.000 |
+| Tokens vistos | 491.520.000 |
+| Learning rate | `1e-5` |
+| Scheduler | constant |
+| Optimizer | AdamW |
+| Weight decay | 0.1 |
+| Dtype | float16 |
 
 Como executar:
 
@@ -101,7 +101,7 @@ Curva de loss:
 
 - [outputs/loss_curve_0_60k.png](outputs/loss_curve_0_60k.png)
 
-Exemplos de geracao:
+Exemplos de geração:
 
 - [outputs/samples_best_60k.txt](outputs/samples_best_60k.txt)
 
@@ -126,7 +126,7 @@ Checkpoint final:
 | --- | ---: | ---: | ---: |
 | `checkpoints/ckpt_last.pt` | 60.000 | 4.1946 | 4.2957 |
 
-## 6. Geracao
+## 6. Geração
 
 ```bash
 python src/generate.py \
@@ -140,10 +140,10 @@ python src/generate.py \
 
 ## 7. Checkpoint
 
-Checkpoints pesados nao devem ser versionados diretamente no GitHub. Para a entrega, hospedar `checkpoints/ckpt_best.pt` ou `checkpoints/ckpt_last.pt` no HuggingFace Hub ou Google Drive e preencher:
+Checkpoints pesados não devem ser versionados diretamente no GitHub. Para a entrega, hospede `checkpoints/ckpt_best.pt` ou `checkpoints/ckpt_last.pt` no HuggingFace Hub ou Google Drive e preencha:
 
-- Link do checkpoint: `PREENCHER_APOS_UPLOAD`
+- Link do checkpoint: `PREENCHER_APÓS_UPLOAD`
 
-## 8. Creditos
+## 8. Créditos
 
-Este projeto usa PyTorch, HuggingFace Datasets, tiktoken, NumPy e Matplotlib. A organizacao geral do pipeline de pre-treino foi inspirada pelo nanoGPT, com implementacao propria/adaptada para uma arquitetura LLaMA-inspired.
+Este projeto usa PyTorch, HuggingFace Datasets, tiktoken, NumPy e Matplotlib. A organização geral do pipeline de pré-treino foi inspirada pelo nanoGPT, com implementação própria/adaptada para uma arquitetura LLaMA-inspired.
