@@ -76,6 +76,8 @@ Configuração final local:
 | Weight decay | 0.1 |
 | Dtype | float16 |
 
+Pelas Chinchilla Scaling Laws, um modelo de aproximadamente 109M parâmetros teria como referência ideal algo próximo de 2B tokens. Nesta entrega, por limitação de tempo e treino local em uma RTX 3060, foi usado um pré-treino parcial com 491,5M tokens vistos.
+
 Como executar:
 
 ```bash
@@ -142,7 +144,7 @@ python src/generate.py \
 
 Checkpoints pesados não devem ser versionados diretamente no GitHub. Para a entrega, hospede `checkpoints/ckpt_best.pt` ou `checkpoints/ckpt_last.pt` no HuggingFace Hub ou Google Drive e preencha:
 
-- Link do checkpoint: `PREENCHER_APÓS_UPLOAD`
+- Link do checkpoint: [Google Drive - ckpt_best.pt](https://drive.google.com/file/d/1mFDWEI6f4vMm8keQLZG8-AvdPvVurpVx/view?usp=sharing)
 
 ## 8. Créditos
 
