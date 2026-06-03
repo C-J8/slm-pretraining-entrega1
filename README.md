@@ -144,7 +144,7 @@ python src/generate.py \
 
 Checkpoints pesados não devem ser versionados diretamente no GitHub. Para a entrega, hospede `checkpoints/ckpt_best.pt` ou `checkpoints/ckpt_last.pt` no HuggingFace Hub ou Google Drive e preencha:
 
-- Link do checkpoint: [Google Drive - ckpt_best.pt](https://drive.google.com/file/d/1mFDWEI6f4vMm8keQLZG8-AvdPvVurpVx/view?usp=sharing)
+- Link do checkpoint: [HuggingFace Hub - ckpt_best.pt](https://huggingface.co/C1Junin2/slm-pretraining-entrega1)
 
 ## 8. Créditos
 
