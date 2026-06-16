@@ -2,6 +2,7 @@ import csv
 import math
 import os
 import random
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -58,7 +59,16 @@ def init_train_log(path: str | Path):
     ensure_dir(path.parent)
     with open(path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["step", "tokens_seen", "train_loss", "val_loss", "learning_rate"])
+        writer.writerow(["timestamp", "step", "tokens_seen", "train_loss", "val_loss", "learning_rate"])
+
+
+def train_log_has_timestamp(path: str | Path) -> bool:
+    path = Path(path)
+    if not path.exists() or path.stat().st_size == 0:
+        return True
+    with open(path, "r", encoding="utf-8") as f:
+        header = f.readline().strip().split(",")
+    return "timestamp" in header
 
 
 def append_train_log(
@@ -69,17 +79,20 @@ def append_train_log(
     val_loss: float | None,
     learning_rate: float,
 ):
+    has_timestamp = train_log_has_timestamp(path)
+    row = [
+        step,
+        tokens_seen,
+        f"{train_loss:.6f}",
+        "" if val_loss is None else f"{val_loss:.6f}",
+        f"{learning_rate:.8f}",
+    ]
+    if has_timestamp:
+        row = [datetime.now().isoformat(timespec="seconds"), *row]
     with open(path, "a", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow([
-            step,
-            tokens_seen,
-            f"{train_loss:.6f}",
-            "" if val_loss is None else f"{val_loss:.6f}",
-            f"{learning_rate:.8f}",
-        ])
+        writer.writerow(row)
 
 
 def worker_count_from_env(default: int = 1) -> int:
     return int(os.environ.get("NUM_WORKERS", default))
-

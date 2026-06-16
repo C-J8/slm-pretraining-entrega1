@@ -1,0 +1,62 @@
+project:
+  name: "slm-sft-smoltalk"
+  seed: 1337
+
+model:
+  name: "llama_inspired_100m_sft"
+  vocab_size: 50257
+  block_size: 512
+  n_layer: 10
+  n_embd: 768
+  n_head: 12
+  head_dim: 64
+  n_kv_head: 12
+  ffn_hidden_size: 2048
+  dropout: 0.0
+  bias: false
+  norm: "rmsnorm"
+  activation: "swiglu"
+  positional_encoding: "rope"
+  tie_weights: true
+
+data:
+  dataset_name: "HuggingFaceTB/smoltalk"
+  dataset_config: "all"
+  split: "train"
+  train_tokens_bin: "data/smoltalk_sft_train_tokens.bin"
+  train_labels_bin: "data/smoltalk_sft_train_labels.bin"
+  val_tokens_bin: "data/smoltalk_sft_val_tokens.bin"
+  val_labels_bin: "data/smoltalk_sft_val_labels.bin"
+  val_fraction: 0.02
+  streaming: true
+
+training:
+  batch_size: 1
+  gradient_accumulation_steps: 16
+  effective_batch_size: 16
+  learning_rate: 1.0e-5
+  min_learning_rate: 1.0e-6
+  weight_decay: 0.1
+  beta1: 0.9
+  beta2: 0.95
+  warmup_steps: 100
+  max_steps: 5000
+  eval_interval: 100
+  eval_iters: 50
+  log_interval: 20
+  save_interval: 500
+  grad_clip: 1.0
+  dtype: "float16"
+  optimizer: "adamw"
+  scheduler: "cosine"
+
+paths:
+  checkpoint_dir: "checkpoints"
+  output_dir: "outputs"
+  train_log: "outputs/sft_log.csv"
+  checkpoint_prefix: "sft"
+
+generation:
+  max_new_tokens: 128
+  temperature: 0.7
+  top_k: 50

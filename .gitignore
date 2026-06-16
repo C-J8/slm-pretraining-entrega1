@@ -7,10 +7,15 @@ __pycache__/
 venv/
 env/
 .vscode/
+pdf/
 
 data/*.bin
 checkpoints/*.pt
 checkpoints/*.pth
 checkpoints/*.safetensors
+checkpoints/**/*.pt
+checkpoints/**/*.pth
+checkpoints/**/*.safetensors
+outputs/smoke_*.txt
 
 .DS_Store

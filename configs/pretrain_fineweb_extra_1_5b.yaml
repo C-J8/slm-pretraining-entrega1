@@ -1,0 +1,31 @@
+project:
+  name: "fineweb-edu-extra-1_5b"
+  seed: 1337
+
+model:
+  name: "llama_inspired_100m"
+  vocab_size: 50257
+  block_size: 512
+  n_layer: 10
+  n_embd: 768
+  n_head: 12
+  head_dim: 64
+  n_kv_head: 12
+  ffn_hidden_size: 2048
+  dropout: 0.0
+  bias: false
+  norm: "rmsnorm"
+  activation: "swiglu"
+  positional_encoding: "rope"
+  tie_weights: true
+
+data:
+  dataset_name: "HuggingFaceFW/fineweb-edu"
+  dataset_config: "sample-10BT"
+  split: "train"
+  text_field: "text"
+  train_bin: "data/fineweb_edu_train_extra_1_5b.bin"
+  val_bin: "data/fineweb_edu_val_extra_1_5b.bin"
+  val_fraction: 0.01
+  streaming: true
+  num_proc: 1

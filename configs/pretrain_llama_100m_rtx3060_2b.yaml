@@ -1,0 +1,63 @@
+project:
+  name: "slm-pretraining-rtx3060-2b"
+  seed: 1337
+
+model:
+  name: "llama_inspired_100m_rtx3060_2b"
+  vocab_size: 50257
+  block_size: 512
+  n_layer: 10
+  n_embd: 768
+  n_head: 12
+  head_dim: 64
+  n_kv_head: 12
+  ffn_hidden_size: 2048
+  dropout: 0.0
+  bias: false
+  norm: "rmsnorm"
+  activation: "swiglu"
+  positional_encoding: "rope"
+  tie_weights: true
+
+data:
+  dataset_name: "HuggingFaceFW/fineweb-edu"
+  dataset_config: "sample-10BT"
+  split: "train"
+  text_field: "text"
+  train_bin: "data/fineweb_edu_train_2b.bin"
+  val_bin: "data/fineweb_edu_val_2b.bin"
+  val_fraction: 0.01
+  streaming: true
+  num_proc: 1
+
+training:
+  batch_size: 1
+  gradient_accumulation_steps: 16
+  effective_batch_size: 16
+  learning_rate: 5.0e-6
+  min_learning_rate: 5.0e-6
+  weight_decay: 0.1
+  beta1: 0.9
+  beta2: 0.95
+  warmup_steps: 0
+  max_steps: 244200
+  eval_interval: 500
+  eval_iters: 50
+  log_interval: 20
+  save_interval: 10000
+  grad_clip: 1.0
+  dtype: "float16"
+  optimizer: "adamw"
+  scheduler: "constant"
+  reset_best_val_on_resume: true
+
+paths:
+  checkpoint_dir: "checkpoints/pretrain_2b"
+  output_dir: "outputs"
+  train_log: "outputs/train_log_1b_2b.csv"
+  samples_file: "outputs/samples_best_2b.txt"
+
+generation:
+  max_new_tokens: 100
+  temperature: 0.8
+  top_k: 50
