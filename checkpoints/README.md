@@ -6,8 +6,8 @@ Para a Entrega 1, hospede pelo menos um checkpoint parcial ou final no HuggingFa
 
 Para a Entrega Final, os checkpoints esperados são:
 
-- `ckpt_best.pt` ou `ckpt_last.pt` para pré-treino;
-- `midtrain_best.pt` ou `midtrain_last.pt` para mid-training;
-- `sft_best.pt` ou `sft_last.pt` para SFT.
+- `pretrain_2b/ckpt_best.pt` para pré-treino;
+- `midtrain_best.pt` para mid-training;
+- `sft_best.pt` para SFT final.
 
 Checkpoints intermediários `*_step_*.pt` servem apenas para recuperação durante treinos longos. Depois de validar `*_best.pt` e `*_last.pt`, eles podem ser apagados localmente para liberar espaço.

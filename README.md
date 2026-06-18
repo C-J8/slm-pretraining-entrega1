@@ -50,34 +50,38 @@ Corpus de pré-treino:
 - config: `sample-10BT`;
 - split: `train`;
 - idioma predominante: inglês;
-- documentos processados localmente: 500.000.
+- documentos processados localmente: 2.000.000, em duas fatias sem repetir os 500.000 documentos iniciais.
 
 O script [scripts/prepare_data.py](scripts/prepare_data.py) tokeniza o texto com GPT-2 BPE via `tiktoken` e salva os tokens em arquivos binários:
 
 - `data/fineweb_edu_train_500m.bin`: 512.824.558 tokens;
-- `data/fineweb_edu_val_500m.bin`: 5.133.236 tokens.
+- `data/fineweb_edu_val_500m.bin`: 5.133.236 tokens;
+- `data/fineweb_edu_train_extra_1_5b.bin`: 1.532.680.638 tokens;
+- `data/fineweb_edu_val_extra_1_5b.bin`: 15.273.358 tokens;
+- `data/fineweb_edu_train_2b.bin`: 2.045.505.196 tokens;
+- `data/fineweb_edu_val_2b.bin`: 20.406.594 tokens.
 
 Cada documento recebe o token `<|endoftext|>` ao final, usando o ID nativo do GPT-2.
 
 ## 4. Pré-treino
 
-Configuração final local:
+Configuração final do pré-treino:
 
 | Item | Valor |
 | --- | ---: |
-| GPU | RTX 3060 12 GB |
-| Batch size | 1 |
+| Hardware | RTX 3060 12 GB até 1B; 2x RTX A5000 24 GB de 1B até 2B |
+| Batch size | 1 por GPU |
 | Gradient accumulation | 16 |
-| Tokens por step | 8.192 |
-| Max steps | 60.000 |
-| Tokens vistos | 491.520.000 |
-| Learning rate | `1e-5` |
-| Scheduler | constant |
+| Tokens por step | 8.192 na RTX 3060; 16.384 no DDP com 2 GPUs |
+| Step final do log | 183.140 |
+| Tokens vistos | 2.000.322.560 |
+| Learning rate final | `5e-6` |
+| Scheduler final | constant |
 | Optimizer | AdamW |
 | Weight decay | 0.1 |
 | Dtype | float16 |
 
-Pelas Chinchilla Scaling Laws, um modelo de aproximadamente 109M parâmetros teria como referência ideal algo próximo de 2B tokens. Nesta entrega, por limitação de tempo e treino local em uma RTX 3060, foi usado um pré-treino parcial com 491,5M tokens vistos.
+Pelas Chinchilla Scaling Laws, um modelo de aproximadamente 109M parâmetros teria como referência ideal algo próximo de 2B tokens. A versão final da entrega chegou a essa escala com DDP no servidor da PUCRS, usando 2x RTX A5000 para continuar o pré-treino de 1B até aproximadamente 2B tokens vistos.
 
 Como executar:
 
@@ -94,7 +98,7 @@ Para continuar a partir de um checkpoint existente:
 python src/train.py --config configs/pretrain_llama_100m_rtx3060_60k.yaml --resume checkpoints/ckpt_last.pt
 ```
 
-### 4.1 Continuação opcional para 1B e 2B tokens
+### 4.1 Preparação e continuação para 1B e 2B tokens
 
 As configs abaixo mantêm `batch_size=1`, `block_size=512` e `gradient_accumulation_steps=16`, ou seja, continuam usando 8.192 tokens por step. Os logs novos incluem uma coluna `timestamp` para medir a duração real do treino.
 
@@ -154,7 +158,7 @@ Saídas principais:
 - `checkpoints/pretrain_2b/ckpt_last.pt`
 - `outputs/train_log_1b_2b.csv`
 
-Observação: após um pré-treino melhor, o ideal metodológico é refazer mid-training e SFT a partir do novo melhor checkpoint.
+Após o pré-treino em 2B tokens, o mid-training e o SFT foram refeitos a partir do novo melhor checkpoint: `checkpoints/pretrain_2b/ckpt_best.pt`.
 
 ### 4.2 Servidor PUCRS com 2 GPUs
 
@@ -226,20 +230,19 @@ Treinar a partir do checkpoint de pré-treino:
 ```bash
 python src/finetune.py \
   --config configs/midtrain_smoltalk.yaml \
-  --init-checkpoint checkpoints/ckpt_best.pt
+  --init-checkpoint checkpoints/pretrain_2b/ckpt_best.pt
 ```
 
-Checkpoints esperados:
+Checkpoint principal:
 
 - `checkpoints/midtrain_best.pt`
-- `checkpoints/midtrain_last.pt`
 
 Resultados obtidos:
 
 | Checkpoint | Step | Train loss | Val loss |
 | --- | ---: | ---: | ---: |
-| `checkpoints/midtrain_best.pt` | 6.200 | 2.4482 | 2.2997 |
-| `checkpoints/midtrain_last.pt` | 10.000 | 2.5875 | 2.4792 |
+| `checkpoints/midtrain_best.pt` | 8.200 | 2.3183 | 2.1819 |
+| último ponto do log | 10.000 | 2.3920 | 2.3714 |
 
 Curva de loss:
 
@@ -263,17 +266,16 @@ python src/finetune.py \
   --init-checkpoint checkpoints/midtrain_best.pt
 ```
 
-Checkpoint esperado para a entrega final:
+Checkpoint principal para a entrega final:
 
 - `checkpoints/sft_best.pt`
-- `checkpoints/sft_last.pt`
 
 Resultados obtidos:
 
 | Checkpoint | Step | Train loss | Val loss |
 | --- | ---: | ---: | ---: |
-| `checkpoints/sft_best.pt` | 3.400 | 2.4306 | 2.3261 |
-| `checkpoints/sft_last.pt` | 5.000 | 2.3872 | 2.6437 |
+| `checkpoints/sft_best.pt` | 3.400 | 2.2551 | 2.1770 |
+| último ponto do log | 5.000 | 2.2208 | 2.4874 |
 
 Curva de loss:
 
@@ -288,25 +290,27 @@ Perplexidade é calculada como `exp(loss)` sobre um split de validação.
 ```bash
 python src/evaluate.py perplexity \
   --checkpoint checkpoints/sft_best.pt \
-  --data data/fineweb_edu_val_500m.bin \
+  --data data/fineweb_edu_val_2b.bin \
   --eval-iters 100 \
   --batch-size 1 \
   --output outputs/sft_perplexity.json
 ```
 
-Resultado obtido com `checkpoints/sft_best.pt` sobre `data/fineweb_edu_val_500m.bin`:
+Resultado obtido com `checkpoints/sft_best.pt` sobre `data/fineweb_edu_val_2b.bin`:
 
 | Loss | PPL |
 | ---: | ---: |
-| 4.8556 | 128.46 |
+| 4.6227 | 101.77 |
 
 Para exportar a curva de validação do pré-treino:
 
 ```bash
 python src/evaluate.py val_curve \
-  --log outputs/train_log_0_60k.csv \
+  --log outputs/train_log_1b_2b.csv \
   --output outputs/pretrain_val_curve.json
 ```
+
+Também há uma curva combinada do pré-treino completo em `outputs/pretrain_val_curve_0_2b.json`.
 
 ### 7.2 Benchmark de múltipla escolha
 
@@ -333,7 +337,7 @@ Resultado obtido em 200 exemplos do HellaSwag:
 
 | Benchmark | Exemplos | Acertos | Acurácia |
 | --- | ---: | ---: | ---: |
-| HellaSwag | 200 | 67 | 33,5% |
+| HellaSwag | 200 | 69 | 34,5% |
 
 ## 8. Demo chat
 
@@ -360,65 +364,70 @@ Os slides da apresentação estão em:
 
 ## 10. Resultados de pré-treino
 
-Log final:
+Logs finais:
 
 - [outputs/train_log_0_60k.csv](outputs/train_log_0_60k.csv)
+- [outputs/train_log_60k_1b.csv](outputs/train_log_60k_1b.csv)
+- [outputs/train_log_1b_2b.csv](outputs/train_log_1b_2b.csv)
 
-Curva de loss:
+Curvas de loss:
 
 - [outputs/loss_curve_0_60k.png](outputs/loss_curve_0_60k.png)
+- [outputs/loss_curve_1b_2b.png](outputs/loss_curve_1b_2b.png)
+- [outputs/pretrain_loss_curve_0_2b.png](outputs/pretrain_loss_curve_0_2b.png)
 
 Exemplos de geração:
 
 - [outputs/samples_best_60k.txt](outputs/samples_best_60k.txt)
+- [outputs/samples_sft_final.txt](outputs/samples_sft_final.txt)
 
 Resumo da loss:
 
 | Step | Tokens vistos | Train loss | Val loss |
 | ---: | ---: | ---: | ---: |
-| 10.000 | 81.920.000 | 4.6403 | 4.6868 |
-| 15.000 | 122.880.000 | 4.6170 | 4.6905 |
-| 35.000 | 286.720.000 | 4.4181 | 4.5173 |
 | 60.000 | 491.520.000 | 4.1946 | 4.2957 |
+| 122.100 | 1.000.243.200 | 4.1165 | 4.2588 |
+| 155.500 | 1.547.468.800 | 4.0141 | 3.8937 |
+| 183.140 | 2.000.322.560 | 3.8945 | 3.9927 |
 
 Melhor checkpoint observado:
 
 | Checkpoint | Step | Train loss | Val loss |
 | --- | ---: | ---: | ---: |
-| `checkpoints/ckpt_best.pt` | 58.200 | 4.2186 | 4.2281 |
+| `checkpoints/pretrain_2b/ckpt_best.pt` | 155.500 | 4.0141 | 3.8937 |
 
-Checkpoint final:
+Último ponto do log:
 
 | Checkpoint | Step | Train loss | Val loss |
 | --- | ---: | ---: | ---: |
-| `checkpoints/ckpt_last.pt` | 60.000 | 4.1946 | 4.2957 |
+| `outputs/train_log_1b_2b.csv` | 183.140 | 3.8945 | 3.9927 |
 
-Perplexidade aproximada no último ponto de validação do pré-treino:
+Perplexidade aproximada no melhor ponto de validação do pré-treino:
 
 | Step | Val loss | PPL |
 | ---: | ---: | ---: |
-| 60.000 | 4.2957 | 73.38 |
+| 155.500 | 3.8937 | 49.09 |
 
-O arquivo [outputs/pretrain_val_curve.json](outputs/pretrain_val_curve.json) exporta todos os pontos de validação com perplexidade.
+Os arquivos [outputs/pretrain_val_curve.json](outputs/pretrain_val_curve.json) e [outputs/pretrain_val_curve_0_2b.json](outputs/pretrain_val_curve_0_2b.json) exportam pontos de validação com perplexidade.
 
 ## 11. Geração
 
 ```bash
 python src/generate.py \
-  --checkpoint checkpoints/ckpt_best.pt \
-  --prompt "The future of artificial intelligence is" \
-  --max_new_tokens 100 \
-  --temperature 0.8 \
+  --checkpoint checkpoints/sft_best.pt \
+  --prompt "User:\nWhat is the importance of study?\nAssistant:\n" \
+  --max_new_tokens 120 \
+  --temperature 0.7 \
   --top_k 50 \
-  --output outputs/samples_best_60k.txt
+  --output outputs/samples_sft_final.txt
 ```
 
 ## 12. Checkpoints
 
-Checkpoints pesados não devem ser versionados diretamente no GitHub. Para a entrega, hospede `checkpoints/ckpt_best.pt` ou `checkpoints/ckpt_last.pt` no HuggingFace Hub ou Google Drive.
+Checkpoints pesados não devem ser versionados diretamente no GitHub. Para a entrega final, hospede `checkpoints/sft_best.pt` em HuggingFace Hub ou Google Drive. Também é recomendado hospedar `checkpoints/pretrain_2b/ckpt_best.pt` e `checkpoints/midtrain_best.pt`.
 
 - Link do checkpoint de pré-treino: [HuggingFace Hub - ckpt_best.pt](https://huggingface.co/C1Junin2/slm-pretraining-entrega1)
-- Link do checkpoint final SFT: preencher após o treino final.
+- Link do checkpoint final SFT: pendente de upload externo.
 
 Para economizar espaço local, checkpoints intermediários como `midtrain_step_*.pt` e `sft_step_*.pt` podem ser removidos depois de confirmar que `*_best.pt` e `*_last.pt` existem.
 

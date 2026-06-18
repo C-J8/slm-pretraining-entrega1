@@ -1,7 +1,7 @@
 {
   "checkpoint": "checkpoints/sft_best.pt",
-  "data": "data/fineweb_edu_val_500m.bin",
-  "loss": 4.855615139007568,
-  "perplexity": 128.459687480056,
+  "data": "data/fineweb_edu_val_2b.bin",
+  "loss": 4.622666358947754,
+  "perplexity": 101.76501275552219,
   "eval_iters": 100
 }

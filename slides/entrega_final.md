@@ -17,31 +17,31 @@
 
 - Dataset: FineWeb-Edu `sample-10BT`.
 - Tokenizer: GPT-2 BPE.
-- Dados locais: 500.000 documentos.
-- Tokens processados: 491.520.000.
-- Hardware: RTX 3060 12 GB.
+- Dados locais: 2.000.000 documentos.
+- Tokens processados: 2.000.322.560.
+- Hardware: RTX 3060 12 GB + 2x RTX A5000 24 GB.
 
 ## 4. Scaling Laws
 
 - Chinchilla recomenda aproximadamente 20 tokens por parametro.
 - Para 109M parametros, o ideal seria perto de 2B tokens.
-- O treino local usou 491,5M tokens por limite de tempo e hardware.
-- A decisao priorizou pipeline completo e checkpoint treinado.
+- O treino final chegou a aproximadamente 2B tokens.
+- A continuacao 1B -> 2B usou DDP com 2 GPUs no servidor PUCRS.
 
 ## 5. Resultados de Pre-treino
 
-- Loss final de treino: 4.1946.
-- Loss final de validacao: 4.2957.
-- Melhor loss de validacao: 4.2281 no step 58.200.
-- PPL aproximada no ultimo ponto: 73.38.
+- Loss final de treino: 3.8945 no step 183.140.
+- Loss final de validacao: 3.9927.
+- Melhor loss de validacao: 3.8937 no step 155.500.
+- PPL aproximada no melhor ponto: 49.09.
 
 ## 6. Mid-training
 
 - Dataset: SmolTalk, subset `all`.
 - Objetivo: especializar o modelo em dados conversacionais e de raciocinio.
-- Inicializacao: pesos do melhor checkpoint de pre-treino.
+- Inicializacao: pesos do melhor checkpoint de pre-treino 2B.
 - Template: `System:`, `User:`, `Assistant:`.
-- Melhor validacao: loss 2.2997 no step 6.200.
+- Melhor validacao: loss 2.1819 no step 8.200.
 
 ## 7. SFT
 
@@ -49,15 +49,15 @@
 - Mesmo template conversacional.
 - Loss mask com `-100` nos tokens de prompt.
 - Apenas tokens de resposta do assistente contribuem para a loss.
-- Melhor validacao: loss 2.3261 no step 3.400.
+- Melhor validacao: loss 2.1770 no step 3.400.
 
 ## 8. Avaliacao
 
 - Perplexidade no split de validacao.
 - Benchmark de multipla escolha por log-likelihood.
 - Benchmarks suportados no codigo: HellaSwag, ARC-Easy, ARC-Challenge, PIQA e WinoGrande.
-- SFT PPL em FineWeb-Edu val: 128.46.
-- HellaSwag com 200 exemplos: 33.5% de acuracia.
+- SFT PPL em FineWeb-Edu val: 101.77.
+- HellaSwag com 200 exemplos: 34.5% de acuracia.
 
 ## 9. Demo Chat
 
@@ -68,6 +68,6 @@
 
 ## 10. Discussao
 
-- Funcionou bem: pipeline modular, checkpoint de pre-treino, curva de loss decrescente.
-- Limitacao principal: volume de tokens abaixo do ideal Chinchilla.
-- Com mais recursos: treinar ate 2B tokens, ampliar benchmarks e comparar estagios.
+- Funcionou bem: pipeline modular, retomada de treino, DDP e curva de loss decrescente.
+- Limitacao principal: qualidade conversacional ainda instavel em um modelo de 109M parametros.
+- Com mais recursos: ampliar benchmarks, comparar estagios e melhorar dataset/hiperparametros de SFT.

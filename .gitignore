@@ -8,6 +8,7 @@ venv/
 env/
 .vscode/
 pdf/
+server_backup/
 
 data/*.bin
 checkpoints/*.pt
