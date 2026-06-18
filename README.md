@@ -427,7 +427,7 @@ python src/generate.py \
 Checkpoints pesados não devem ser versionados diretamente no GitHub. Para a entrega final, hospede `checkpoints/sft_best.pt` em HuggingFace Hub ou Google Drive. Também é recomendado hospedar `checkpoints/pretrain_2b/ckpt_best.pt` e `checkpoints/midtrain_best.pt`.
 
 - Link do checkpoint de pré-treino: [HuggingFace Hub - ckpt_best.pt](https://huggingface.co/C1Junin2/slm-pretraining-entrega1)
-- Link do checkpoint final SFT: pendente de upload externo.
+- Link do checkpoint final SFT: [HuggingFace Hub - sft_best.pt](https://huggingface.co/C1Junin2/slm-pretraining-entrega1/blob/main/checkpoints/sft_best.pt)
 
 Para economizar espaço local, checkpoints intermediários como `midtrain_step_*.pt` e `sft_step_*.pt` podem ser removidos depois de confirmar que `*_best.pt` e `*_last.pt` existem.
 
